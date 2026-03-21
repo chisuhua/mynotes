@@ -11,10 +11,14 @@
             "id": "7eabac9144ea49a2",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "CortiX/智能体循环/AOS-Gateway.md",
+                "mode": "preview",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "AOS-Gateway"
             }
           }
         ]
@@ -108,6 +112,7 @@
         "state": {
           "type": "backlink",
           "state": {
+            "file": "CortiX/智能体循环/AOS-Gateway.md",
             "collapseAll": false,
             "extraContext": false,
             "sortOrder": "alphabetical",
@@ -162,5 +167,20 @@
     }
   },
   "active": "7eabac9144ea49a2",
-  "lastOpenFiles": []
+  "lastOpenFiles": [
+    "CortiX/智能体循环/AOS-u.md",
+    "CortiX/智能体循环/AOS-Gateway.md",
+    "CortiX/智能体循环/v4_dsl_智能体循环对比.md",
+    "CortiX/App_Browser/浏览器智能体架构.md",
+    "CortiX/CppCortiX/智能体平台架构v4.0.md",
+    "AgenticOS/AgenticOS_v2.2/桌面交互/Agent池化 + 会话管理.md",
+    "AgenticOS/AgenticOS_v2.2/AgenticOS Layer 0 资源层规范 v2.2.md",
+    "CortiX/CppCortiX/智能体平台架构v1 1.md",
+    "AgenticOS/AgenticOS_v2.2/合并文档_可复制版.md",
+    "CortiX/CppCortiX/浏览器智能体对比分析.md",
+    "CortiX/CppCortiX/智能体平台架构v3.1.md",
+    "CortiX/智能体循环/智能体循环模式对比.md",
+    "CortiX/Rust方案/前端.md",
+    "CortiX/智能体循环"
+  ]
 }
