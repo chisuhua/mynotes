@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CortiX/智能体循环/AOS-Gateway.md",
-                "mode": "preview",
+                "file": "CortiX/App_Browser/AOS-Browser工具接口v1.1.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "AOS-Gateway"
+              "title": "AOS-Browser工具接口v1.1"
             }
           }
         ]
@@ -168,8 +168,15 @@
   },
   "active": "7eabac9144ea49a2",
   "lastOpenFiles": [
-    "CortiX/智能体循环/AOS-u.md",
+    "CortiX/App_Browser/AOS-Browser工具接口v1.1.md",
+    "CortiX/App_Browser/AOS-Browser工具接口v1.0.md",
+    "CortiX/App_Browser/AOS-Browser顶层设计v3.0.md",
+    "CortiX/App_Browser/CDP浏览器内核.md",
+    "CortiX/App_Browser/AOS-Browser顶层设计v1.md",
+    "CortiX/App_Browser/AOS-Browser详细设计.md",
+    "CortiX/App_Browser/AOS-Browser顶层设计V2.md",
     "CortiX/智能体循环/AOS-Gateway.md",
+    "CortiX/智能体循环/AOS-u.md",
     "CortiX/智能体循环/v4_dsl_智能体循环对比.md",
     "CortiX/App_Browser/浏览器智能体架构.md",
     "CortiX/CppCortiX/智能体平台架构v4.0.md",
