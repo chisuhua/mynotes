@@ -1,3 +1,10 @@
+# CDP 浏览器内核设计 (CyberWeasel)
+
+> **文档版本**: v1.0
+> **基线架构**: AOS-Universal v3.0 (Layer0 BrowserSandbox 实现)
+> **最后更新**: 2026-03-23
+> **集成位置**: AOS-Universal Layer0 - BrowserSandbox 具体实现
+
 基于 Lightpanda 的轻量无头浏览器哲学与前面讨论的 WASM Skill 隔离架构，设计 "CyberWeasel" —— 专为 AI 自动化上网优化的 CDP 浏览器内核。
 
 ---

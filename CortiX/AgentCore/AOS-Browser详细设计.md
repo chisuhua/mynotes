@@ -1,3 +1,9 @@
+# AOS-Browser 详细设计
+
+> **文档版本**: v1.0
+> **基线架构**: AOS-Browser v1.0
+> **最后更新**: 2026-03-23
+
 # AOS-Browser 详细设计文档 (AOS-Browser-Detailed-Design.md)
 
 | 文档属性 | 内容 |
