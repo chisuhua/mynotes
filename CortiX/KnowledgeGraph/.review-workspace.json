@@ -1,0 +1,22 @@
+{
+  "version": "1.4.0",
+  "project": "KnowledgeGraph",
+  "parent": "CortiX",
+  "base": "/workspace/mynotes",
+  "promptPrefix": "",
+  "sessions": {
+    "architect": "knowledgegraph-architect",
+    "reviewer": "knowledgegraph-reviewer"
+  },
+  "files": {
+    "architect": "ARCHITECT.md",
+    "reviewer": "REVIEWER.md",
+    "checklist": "CHECKLIST.md"
+  },
+  "directories": {
+    "designs": "designs",
+    "reviews": "reviews",
+    "archive": "archive"
+  },
+  "createdAt": "2026-03-24T15:17:22+08:00"
+}
