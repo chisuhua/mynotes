@@ -1,0 +1,50 @@
+# ~/.openclaw/skills/ecommerce-daily-analysis.yaml
+name: ecommerce-daily-analysis
+version: 1.0.0
+description: 每日电商商品分析流水线
+
+stages:
+  - name: crawl
+    description: 爬取淘宝/京东最新数据
+    agent: ecommerce-orchestrator
+    command: |
+      openclaw chat --agent ecommerce-orchestrator "
+        从 ~/.openclaw/ecommerce/config/product_urls.json 读取商品 URL 列表，
+        调用 crawler-agent 爬取最新数据，
+        保存到 ~/.openclaw/ecommerce/raw_data/{platform}/{date}/
+      "
+    
+  - name: deduplicate
+    description: 数据去重
+    agent: ecommerce-orchestrator
+    command: |
+      openclaw chat --agent ecommerce-orchestrator "
+        对 raw_data 中的商品进行去重（基于商品 ID + 标题 Hash），
+        去重后数据保存到 ~/.openclaw/ecommerce/analysis_results/cleaned/
+      "
+    
+  - name: analyze
+    description: AI 分析
+    agent: ecommerce-orchestrator
+    command: |
+      openclaw chat --agent ecommerce-orchestrator "
+        读取 cleaned 目录中的商品数据，协调各专业 Agent 进行分析：
+        1. price-analyst: 价格趋势 + 异常检测
+        2. sentiment-analyst: 评价情感分析
+        3. classifier-agent: 自动分类标注
+        4. competitor-analyst: 竞品对比
+        5. anomaly-detector: 异常模式识别
+        将分析结果保存到 ~/.openclaw/ecommerce/analysis_results/{analysis_type}/
+      "
+    
+  - name: report
+    description: 生成报告
+    agent: report-generator
+    command: |
+      openclaw chat --agent report-generator "
+        读取 analysis_results 中的所有分析结果，
+        生成每日分析报告，
+        输出到 ~/.openclaw/ecommerce/reports/daily_$(date +%Y%m%d).md
+      "
+
+schedule: "0 6 * * *"  # 每天早上 6 点执行

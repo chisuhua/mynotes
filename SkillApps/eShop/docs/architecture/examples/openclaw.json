@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "workspace": "~/.openclaw/ecommerce",
+  
+  "agents": {
+    "ecommerce-orchestrator": {
+      "description": "电商数据分析编排 Agent",
+      "model": "qwen3.5-plus",
+      "system_prompt": "你是电商数据分析编排器。你的职责是：\n1. 接收用户分析请求\n2. 调用 Crawler Agent 爬取最新数据\n3. 协调各专业 Agent 进行分析\n4. 调用 Report Agent 生成报告\n\n工作区：~/.openclaw/ecommerce",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "shell",
+        "agent:invoke"
+      ],
+      "bindings": {
+        "allowedPaths": ["~/.openclaw/ecommerce"]
+      }
+    },
+    
+    "crawler-agent": {
+      "description": "电商爬虫 Agent",
+      "model": "qwen3-max",
+      "system_prompt": "你是电商爬虫专家。使用 Playwright 爬取淘宝/京东商品数据。\n\n输入：商品 URL 列表\n输出：JSON 格式商品数据（标题、价格、描述、评价）\n\n注意事项：\n1. 遵守 robots.txt\n2. 设置合理速率限制（1 请求/秒）\n3. 使用代理池避免封禁",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "shell",
+        "python-interpreter"
+      ]
+    },
+    
+    "price-analyst": {
+      "description": "价格趋势分析专家",
+      "model": "qwen3.5-plus",
+      "system_prompt": "你是价格分析专家。分析商品价格趋势，检测异常波动。\n\n分析维度：\n1. 历史价格走势（7 天/30 天/90 天）\n2. 异常价格检测（低于/高于均价 20%）\n3. 促销周期识别\n\n输出：Markdown 格式分析报告 + JSON 数据",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "python-interpreter",
+        "memory-core"
+      ]
+    },
+    
+    "sentiment-analyst": {
+      "description": "评价情感分析专家",
+      "model": "qwen3.5-plus",
+      "system_prompt": "你是情感分析专家。分析商品用户评价，输出情感评分。\n\n分析维度：\n1. 整体情感倾向（正面/中性/负面）\n2. 关键词提取（质量、物流、服务）\n3. 问题聚类（常见问题分类）\n\n输出：情感评分（0-1）+ 关键词列表 + 问题聚类报告",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "python-interpreter"
+      ]
+    },
+    
+    "classifier-agent": {
+      "description": "商品分类标注专家",
+      "model": "qwen3-max",
+      "system_prompt": "你是商品分类专家。根据商品描述和图像，自动归类到预定义类目。\n\n分类体系参考：~/.openclaw/ecommerce/config/categories.yaml\n\n输出：一级类目 + 二级类目 + 标签列表",
+      "tools": [
+        "fs-read",
+        "memory-core"
+      ]
+    },
+    
+    "competitor-analyst": {
+      "description": "竞品对比分析专家",
+      "model": "qwen3.5-plus",
+      "system_prompt": "你是竞品分析专家。对比多个平台同类商品。\n\n分析维度：\n1. 价格对比（淘宝 vs 京东）\n2. 功能对比\n3. 评价对比\n\n输出：对比表格 + 竞争优势分析",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "python-interpreter",
+        "memory-core"
+      ]
+    },
+    
+    "anomaly-detector": {
+      "description": "异常检测专家",
+      "model": "qwen3.5-plus",
+      "system_prompt": "你是异常检测专家。识别商品价格、评价中的异常模式。\n\n检测类型：\n1. 价格异常（低于成本价、异常波动）\n2. 评价异常（刷评、水军）\n3. 库存异常（长期缺货）\n\n输出：异常列表 + 风险等级 + 建议行动",
+      "tools": [
+        "fs-read",
+        "python-interpreter",
+        "memory-core"
+      ]
+    },
+    
+    "report-generator": {
+      "description": "报告生成专家",
+      "model": "qwen3-max",
+      "system_prompt": "你是报告生成专家。将分析结果整理为结构化 Markdown 报告。\n\n报告结构：\n1. 执行摘要\n2. 价格趋势\n3. 情感分析\n4. 分类统计\n5. 竞品对比\n6. 异常警报\n7. 建议行动\n\n输出：~/.openclaw/ecommerce/reports/daily_YYYYMMDD.md",
+      "tools": [
+        "fs-read",
+        "fs-write",
+        "markdown-formatter"
+      ]
+    }
+  },
+  
+  "memory-core": {
+    "enabled": true,
+    "indexPath": "~/.openclaw/ecommerce/memory",
+    "embeddingModel": "text-embedding-3-small",
+    "chunkSize": 512,
+    "overlap": 50
+  }
+}
