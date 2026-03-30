@@ -66,6 +66,24 @@
 
 ---
 
+## 实施状态
+
+### 错误处理策略
+
+- ✅ **独立文档**：[ERROR-HANDLING-STRATEGY.md](../ERROR-HANDLING-STRATEGY.md)
+- ✅ **版本**：1.0.0
+- ✅ **内容**：重试机制、熔断器、降级策略、错误日志
+- ✅ **主文档引用**：架构文档 5.4 节
+
+### 测试策略
+
+- ✅ **独立文档**：[TESTING-STRATEGY.md](../TESTING-STRATEGY.md)
+- ✅ **版本**：1.0.0
+- ✅ **内容**：测试金字塔、pytest 示例、CI/CD 集成
+- ✅ **主文档引用**：架构文档 7 章
+
+---
+
 ## 权衡
 
 ### 正面后果 ✅
@@ -157,12 +175,9 @@ responses>=0.23.0      # HTTP Mock
 freezegun>=1.2.0       # 时间 Mock
 ```
 
-**详细测试代码示例**请参阅 [TESTING-STRATEGY.md](../TESTING-STRATEGY.md)，包括：
-- 单元测试完整示例（爬虫解析、重试机制）
-- 集成测试完整示例（Agent 协作、数据流）
-- E2E 测试脚本（完整 Pipeline）
-- pytest 配置和 Fixture 管理
-- GitHub Actions CI/CD 集成
+**详细测试代码示例**请参阅：
+- [TESTING-STRATEGY.md](../TESTING-STRATEGY.md) — 完整测试指南
+- [ERROR-HANDLING-STRATEGY.md](../ERROR-HANDLING-STRATEGY.md) — 错误处理测试示例
 
 ---
 

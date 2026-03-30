@@ -2,7 +2,7 @@
 
 | 属性 | 值 |
 |------|-----|
-| **版本** | 1.1.0 |
+| **版本** | 1.3.0 |
 | **创建日期** | 2026-03-26 |
 | **最后更新** | 2026-03-26 |
 | **状态** | 已发布 |
@@ -14,6 +14,8 @@
 
 | 版本 | 日期 | 作者 | 变更描述 |
 |------|------|------|---------|
+| 1.3.0 | 2026-03-26 | OpenClaw Architecture Team | 错误处理策略分离为独立文档 |
+| 1.2.0 | 2026-03-26 | OpenClaw Architecture Team | 主文档精简：移除部署/测试章节，移至专项文档 |
 | 1.1.0 | 2026-03-26 | OpenClaw Architecture Team | 添加错误处理策略、测试策略 |
 | 1.0.0 | 2026-03-26 | OpenClaw Architecture Team | 初始版本 |
 
@@ -619,355 +621,41 @@ flowchart TD
 
 ### 5.4 错误处理策略
 
-#### 5.4.1 错误分类
+**详细文档**：[[ERROR-HANDLING-STRATEGY]](./ERROR-HANDLING-STRATEGY.md)
 
-系统错误分为四类，每类对应不同处理策略：
+系统采用统一的错误处理框架，确保可靠性：
 
-| 错误类型 | 定义 | 示例 | 处理策略 |
-|---------|------|------|---------|
-| **Transient（瞬时错误）** | 临时性、可自动恢复的错误 | 网络抖动、临时 HTTP 429 限流、DNS 解析失败 | 指数退避重试（最多 3 次） |
-| **Permanent（永久错误）** | 不可恢复的错误 | URL 无效（404）、HTML 结构变化导致解析失败、API 认证失败 | 记录错误日志，跳过继续处理 |
-| **Systematic（系统性错误）** | 影响整体服务的错误 | API 配额耗尽、LLM 服务不可用、Redis 连接失败 | 熔断器模式（15 分钟），降级至缓存 |
-| **Timeout（超时错误）** | 操作超过阈值时间 | 爬取超时（>30s）、LLM 响应超时（>60s）、数据库查询超时 | 重试（2 次），回退至部分结果 |
+**错误分类**：
+| 类型 | 定义 | 处理策略 |
+|------|------|---------|
+| **Transient** | 瞬时错误（网络抖动、临时限流） | 指数退避重试（最多 3 次） |
+| **Permanent** | 永久错误（404、解析失败） | 记录日志，跳过继续 |
+| **Systematic** | 系统性错误（API 配额耗尽） | 熔断器模式（15 分钟）+ 降级 |
+| **Timeout** | 超时错误（>30s） | 重试（2 次）+ 回退 |
 
----
+**核心机制**：
+- **重试机制** — 指数退避（1s, 2s, 4s + 随机抖动）
+- **熔断器模式** — CLOSED → OPEN → HALF_OPEN 状态机
+- **降级策略** — LLM→缓存→简化分析 三级降级
 
-#### 5.4.2 重试机制（指数退避）
+**完整实现代码、配置参数、使用示例**详见：
 
-**重试策略**：
-- **适用场景**：Transient 错误、Timeout 错误
-- **最大重试次数**：3 次
-- **退避公式**：`delay = base_delay * (2 ^ attempt) + random(0, 1)`
-- **基础延迟**：1 秒
+👉 **[错误处理策略文档](./ERROR-HANDLING-STRATEGY.md)**
 
-**重试时序**：
-```
-第 1 次失败 → 等待 1-2 秒 → 第 2 次尝试
-第 2 次失败 → 等待 2-3 秒 → 第 3 次尝试
-第 3 次失败 → 等待 4-5 秒 → 第 4 次尝试
-第 4 次失败 → 标记为永久失败，记录日志
-```
-
-**代码示例**：
-```python
-import time
-import random
-from typing import Callable, Any
-
-def retry_with_exponential_backoff(
-    func: Callable,
-    max_retries: int = 3,
-    base_delay: float = 1.0,
-    exceptions: tuple = (Exception,)
-) -> Any:
-    """
-    指数退避重试装饰器
-    
-    Args:
-        func: 要执行的函数
-        max_retries: 最大重试次数
-        base_delay: 基础延迟（秒）
-        exceptions: 需要重试的异常类型
-        
-    Returns:
-        函数执行结果
-        
-    Raises:
-        MaxRetriesExceeded: 超过最大重试次数
-    """
-    last_exception = None
-    
-    for attempt in range(max_retries + 1):
-        try:
-            return func()
-        except exceptions as e:
-            last_exception = e
-            
-            if attempt == max_retries:
-                break
-                
-            # 计算延迟：指数退避 + 随机抖动
-            delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
-            logger.warning(f"第{attempt + 1}次失败，{delay:.2f}秒后重试：{e}")
-            time.sleep(delay)
-    
-    raise MaxRetriesExceeded(f"超过最大重试次数{max_retries}", last_exception)
-
-# 使用示例
-@retry_with_exponential_backoff
-def crawl_product(url: str) -> dict:
-    """爬取商品数据"""
-    # ...
-```
+包括：
+- 重试机制完整实现（Python 装饰器）
+- 熔断器状态机 + 完整 Python 实现
+- 降级策略代码示例
+- 错误日志与告警配置
+- 各模块错误处理应用指南
 
 ---
 
-#### 5.4.3 熔断器模式
+## 6. 部署指南
 
-**熔断器状态机**：
+**详细文档**：[[DEPLOYMENT-GUIDE]](./DEPLOYMENT-GUIDE.md)（计划中）
 
-```
-                    失败次数 > 阈值
-    ┌─────────────────────────────────┐
-    │                                 ▼
-┌─────────┐    超时      ┌─────────┐  探测请求
-│ CLOSED  │ ───────────▶ │  OPEN   │ ─────────┐
-│ (正常)  │              │ (熔断)  │          │
-└─────────┘              └─────────┘          │
-    ▲                                         │
-    │      探测成功                           ▼
-    │          ┌─────────┐              ┌─────────────┐
-    └─────────│ HALF_   │◀─────────────│  等待恢复   │
-              │  OPEN   │              │  (15 分钟)   │
-              │ (试探)  │              └─────────────┘
-              └─────────┘
-```
-
-**状态说明**：
-| 状态 | 说明 | 行为 |
-|------|------|------|
-| **CLOSED（正常）** | 系统正常运行 | 所有请求正常处理，失败计数累加 |
-| **OPEN（熔断）** | 系统已熔断 | 拒绝所有请求，直接返回降级响应 |
-| **HALF_OPEN（试探）** | 试探性恢复 | 允许 1 个探测请求，成功则恢复，失败则继续熔断 |
-
-**配置参数**：
-```yaml
-# 熔断器配置
-circuit_breaker:
-  failure_threshold: 5        # 失败次数阈值（触发熔断）
-  recovery_timeout: 900       # 恢复超时（15 分钟）
-  half_open_max_calls: 1      # 试探模式最大请求数
-  success_threshold: 2        # 试探成功次数（恢复条件）
-```
-
-**代码示例**：
-```python
-from enum import Enum
-from datetime import datetime, timedelta
-from threading import Lock
-
-class CircuitState(Enum):
-    CLOSED = "closed"
-    OPEN = "open"
-    HALF_OPEN = "half_open"
-
-class CircuitBreaker:
-    """熔断器实现"""
-    
-    def __init__(
-        self,
-        failure_threshold: int = 5,
-        recovery_timeout: int = 900,
-        success_threshold: int = 2
-    ):
-        self.failure_threshold = failure_threshold
-        self.recovery_timeout = recovery_timeout  # 秒
-        self.success_threshold = success_threshold
-        
-        self._state = CircuitState.CLOSED
-        self._failure_count = 0
-        self._success_count = 0
-        self._last_failure_time = None
-        self._lock = Lock()
-    
-    def call(self, func: Callable, *args, **kwargs) -> Any:
-        """执行受保护的函数调用"""
-        with self._lock:
-            if self._state == CircuitState.OPEN:
-                if self._should_attempt_reset():
-                    self._state = CircuitState.HALF_OPEN
-                    self._success_count = 0
-                else:
-                    raise CircuitOpenError("熔断器已打开")
-        
-        try:
-            result = func(*args, **kwargs)
-            self._on_success()
-            return result
-        except Exception as e:
-            self._on_failure()
-            raise
-    
-    def _on_success(self):
-        """成功回调"""
-        with self._lock:
-            if self._state == CircuitState.HALF_OPEN:
-                self._success_count += 1
-                if self._success_count >= self.success_threshold:
-                    self._reset()
-            else:
-                self._failure_count = 0
-    
-    def _on_failure(self):
-        """失败回调"""
-        with self._lock:
-            self._failure_count += 1
-            self._last_failure_time = datetime.now()
-            
-            if self._failure_count >= self.failure_threshold:
-                self._state = CircuitState.OPEN
-    
-    def _should_attempt_reset(self) -> bool:
-        """判断是否可以尝试重置"""
-        if self._last_failure_time is None:
-            return True
-        elapsed = (datetime.now() - self._last_failure_time).total_seconds()
-        return elapsed >= self.recovery_timeout
-    
-    def _reset(self):
-        """重置熔断器"""
-        with self._lock:
-            self._state = CircuitState.CLOSED
-            self._failure_count = 0
-            self._success_count = 0
-```
-
----
-
-#### 5.4.4 降级策略
-
-**降级场景与策略**：
-
-| 场景 | 降级方案 | 触发条件 |
-|------|---------|---------|
-| **LLM 服务不可用** | 使用缓存的分析结果 | 熔断器打开，或连续 3 次超时 |
-| **爬虫失败率 > 50%** | 切换至备用数据源（如 API） | 10 分钟内失败率超过阈值 |
-| **Redis 不可用** | 降级至内存缓存 | 连接失败，自动跳过 Redis |
-| **存储空间不足** | 仅保存最近 7 天数据 | 磁盘使用率 > 90% |
-
-**降级代码示例**：
-```python
-def analyze_with_fallback(product_data: dict) -> dict:
-    """
-    带降级的分析流程
-    
-    优先级：
-    1. 调用 LLM API 进行实时分析
-    2. LLM 失败 → 使用缓存结果
-    3. 缓存失效 → 返回简化分析
-    """
-    cache_key = f"analysis:{product_data['id']}"
-    
-    # 尝试实时分析
-    try:
-        return llm_circuit_breaker.call(
-            call_llm_api,
-            prompt=build_analysis_prompt(product_data)
-        )
-    except CircuitOpenError:
-        logger.warning("LLM 熔断，尝试缓存降级")
-    
-    # 尝试缓存
-    cached = redis_client.get(cache_key)
-    if cached:
-        logger.info("使用缓存分析结果")
-        return {**json.loads(cached), "source": "cache"}
-    
-    # 返回简化分析
-    logger.warning("降级至简化分析")
-    return {
-        "product_id": product_data["id"],
-        "sentiment_score": 0.5,  # 中性默认值
-        "price_trend": "unknown",
-        "source": "fallback"
-    }
-```
-
----
-
-#### 5.4.5 错误日志与告警
-
-**日志格式**：
-```python
-import logging
-import json
-from datetime import datetime
-
-# 结构化日志配置
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
-    handlers=[
-        logging.FileHandler('logs/error.log'),
-        logging.StreamHandler()
-    ]
-)
-
-class ErrorLogger:
-    """错误日志记录器"""
-    
-    @staticmethod
-    def log_error(
-        error_type: str,
-        module: str,
-        details: dict,
-        exception: Exception = None
-    ):
-        """记录结构化错误日志"""
-        log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "error_type": error_type,
-            "module": module,
-            "details": details,
-            "exception": str(exception) if exception else None
-        }
-        logging.error(json.dumps(log_entry, ensure_ascii=False))
-
-# 使用示例
-try:
-    crawl_product(url)
-except Exception as e:
-    ErrorLogger.log_error(
-        error_type="crawl_failure",
-        module="crawler_agent",
-        details={"url": url, "attempt": 3},
-        exception=e
-    )
-```
-
-**告警规则**：
-| 告警类型 | 触发条件 | 通知渠道 |
-|---------|---------|---------|
-| **爬取失败率告警** | 10 分钟内失败率 > 30% | 钉钉/企业微信 |
-| **熔断器打开告警** | 任意熔断器状态变为 OPEN | 钉钉/企业微信 + 邮件 |
-| **LLM 超时告警** | 连续 5 次 LLM 调用超时 | 钉钉/企业微信 |
-| **存储空间告警** | 磁盘使用率 > 85% | 邮件 |
-
----
-
----
-
-## 6. 部署与运维
-
-### 6.1 本地开发环境
-
-**前置条件**：
-- Python 3.10+
-- Node.js 18+
-- OpenClaw 平台（v2026.2+）
-- Playwright
-
-**安装步骤**：
-```bash
-# 1. 安装 OpenClaw
-pip install openclaw
-
-# 2. 启用所需技能
-openclaw skills enable doc-skills scholar-search
-
-# 3. 初始化工作区
-mkdir -p ~/.openclaw/ecommerce/{raw_data,analysis_results,reports,memory,config}
-
-# 4. 复制配置文件
-cp openclaw.json ~/.openclaw/openclaw.json
-cp ecommerce-daily-analysis.yaml ~/.openclaw/skills/
-
-# 5. 安装 Playwright
-playwright install chromium
-
-# 6. 测试运行
-openclaw run-skill ecommerce-daily-analysis --dry-run
-```
+部署与运维相关内容（Docker 容器化、定时任务配置等）将在独立的部署指南文档中提供。
 
 ---
 
@@ -975,147 +663,7 @@ openclaw run-skill ecommerce-daily-analysis --dry-run
 
 **详细文档**：[[TESTING-STRATEGY]](./TESTING-STRATEGY.md)
 
-### 7.1 测试金字塔
-
-系统采用三层测试金字塔模型：
-
-```
-        ╱▔▔▔▔╲         E2E 测试（10%）
-       ╱      ╲        — 完整 Pipeline 验证
-      ╱────────╲       集成测试（30%）
-     ╱          ╲      — Agent 协作、数据流
-    ╱────────────╲     单元测试（60%）
-   ╱______________╲    — 函数、工具类
-```
-
-### 7.2 覆盖率要求
-
-| 测试层级 | 覆盖率要求 | 说明 |
-|---------|-----------|------|
-| **单元测试** | 行覆盖率 ≥ 60% | 核心模块（爬虫、分析）≥ 80% |
-| **集成测试** | 关键路径 100% | 所有 Agent 协作流程必须覆盖 |
-| **E2E 测试** | 主流程 100% | 每日 Pipeline 必须可运行 |
-
-### 7.3 测试范围
-
-**单元测试** — 核心函数、工具类：
-- 爬虫解析函数（`parse_price()`, `parse_product_info()`）
-- 重试机制（`retry_with_exponential_backoff()`）
-- 分析函数（价格趋势、情感分析）
-
-**集成测试** — 模块间协作：
-- Agent 协作（Orchestrator → 专业 Agent）
-- 数据流（原始数据 → 分析结果 → 报告）
-
-**E2E 测试** — 完整 Pipeline：
-- 每日分析流程（爬取 → 分析 → 报告）
-
-### 7.4 详细文档
-
-完整测试策略（含代码示例、CI/CD 集成、最佳实践）请参阅：
-
-👉 **[测试策略文档](./TESTING-STRATEGY.md)**
-
-包括：
-- 完整测试代码示例（pytest）
-- Fixture 和 Mock 配置
-- GitHub Actions CI/CD 集成
-- 测试覆盖率报告生成
-- 常见问题解答
-
-### 6.2 Docker 容器化方案
-
-**Dockerfile**：
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    nodejs npm \
-    && rm -rf /var/lib/apt/lists/*
-
-# 安装 OpenClaw
-RUN pip install openclaw playwright
-
-# 安装 Playwright 浏览器
-RUN playwright install chromium
-RUN playwright install-deps chromium
-
-# 复制配置文件
-COPY openclaw.json /root/.openclaw/openclaw.json
-COPY ecommerce-daily-analysis.yaml /root/.openclaw/skills/
-COPY scripts/ /app/scripts/
-
-# 创建工作区目录
-RUN mkdir -p /data/ecommerce/{raw_data,analysis_results,reports,memory,config}
-
-# 设置环境变量
-ENV OPENCLAW_WORKSPACE=/data/ecommerce
-
-# 入口脚本
-COPY entrypoint.sh /app/
-RUN chmod +x /app/entrypoint.sh
-
-CMD ["/app/entrypoint.sh"]
-```
-
-**docker-compose.yml**：
-```yaml
-version: '3.8'
-
-services:
-  openclaw:
-    build: .
-    volumes:
-      - ./data:/data/ecommerce
-      - ./config:/root/.openclaw/config
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENCLAW_WORKSPACE=/data/ecommerce
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-  cron:
-    image: openclaw-ecommerce
-    command: ["crond", "-f"]
-    volumes:
-      - ./data:/data/ecommerce
-      - ./cron.conf:/etc/crontabs/root
-    restart: unless-stopped
-
-volumes:
-  redis_data:
-```
-
-### 6.3 定时任务配置
-
-**Cron 配置（推荐方式一）**：
-```bash
-# 编辑 crontab
-crontab -e
-
-# 添加每日早上 6 点执行（使用编排 Agent）
-0 6 * * * openclaw chat --agent ecommerce-orchestrator "执行每日商品分析流程" >> ~/.openclaw/ecommerce/logs/cron.log 2>&1
-```
-
-**备选方案：使用 Shell 脚本**
-```bash
-# 添加每日早上 6 点执行（使用 Shell 脚本）
-0 6 * * * bash ~/.openclaw/ecommerce/scripts/run-pipeline.sh >> ~/.openclaw/ecommerce/logs/cron.log 2>&1
-```
-
-**验证 Cron**：
-```bash
-# 查看 Cron 日志
-tail -f ~/.openclaw/ecommerce/logs/cron.log
-```
+测试相关内容（单元测试、集成测试、E2E 测试等）已在独立的测试策略文档中提供。
 
 ---
 
@@ -1134,6 +682,8 @@ tail -f ~/.openclaw/ecommerce/logs/cron.log
   ]
 }
 ```
+
+---
 
 ## 附录 B：分类体系示例
 

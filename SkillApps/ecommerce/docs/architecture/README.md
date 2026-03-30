@@ -9,10 +9,12 @@
 ## 文档导航
 
 ### 📄 主文档
-- [[2026-03-26-ecommerce-analysis-system]] — 系统架构文档（主文档）
+- [[2026-03-26-ecommerce-analysis-system]] — 系统架构文档（主文档，~750 行）
 
 ### 📋 专项文档
-- [[TESTING-STRATEGY]] — 测试策略（完整指南）
+- [[ERROR-HANDLING-STRATEGY]] — 错误处理策略（独立文档，约 400 行）
+- [[TESTING-STRATEGY]] — 测试策略（613 行，完整指南）
+- [[DEPLOYMENT-GUIDE]] — 部署指南（计划中）
 
 ### 📋 架构决策记录 (ADR)
 - [[ADR-001-pure-openclaw-architecture]] — 选择纯 OpenClaw 驱动架构
@@ -47,6 +49,7 @@
 
 | 日期 | 版本 | 变更描述 | 作者 |
 |------|------|---------|------|
+| 2026-03-26 | 1.2.0 | 主文档精简：移除部署/测试章节，移至专项文档 | OpenClaw Architecture Team |
 | 2026-03-26 | 1.1.0 | 添加错误处理策略、测试策略，新增 ADR-004 | OpenClaw Architecture Team |
 | 2026-03-26 | 1.0.0 | 初始版本发布 | OpenClaw Architecture Team |
 
