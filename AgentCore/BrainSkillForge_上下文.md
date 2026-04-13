@@ -254,7 +254,7 @@ class CognitiveEngine {
 | Layer 0 重构计划 | `/workspace/brain-skill-forge/docs/AgenticOS_Layer0_RefactoringPlan.md` | 五阶段重构 |
 | Layer 0 规范 | `/workspace/brain-skill-forge/docs/AgenticOS_Layer0_Spec.md` | L0 详细设计 |
 | 标准库规范 | `/workspace/brain-skill-forge/docs/AgenticDSL_LibSpec_v3.9.md` | `/lib/**` 契约 |
-| 集成 TODO | `/workspace/mynotes/CortiX/INTEGRATION_TODO.md` | 待决策集成点 |
+| 集成 TODO | `/workspace/mynotes/AgentCore/INTEGRATION_TODO.md` | 待决策集成点 |
 
 ---
 

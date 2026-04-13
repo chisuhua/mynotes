@@ -10,7 +10,7 @@
 ### 1. AgentCore ↔ brain-skill-forge 集成
 
 **背景**：
-- **AgentCore** (mynotes/CortiX/AgentCore): 智能体内核 + 灵活外壳架构（C++）
+- **AgentCore** (mynotes/AgentCore): 智能体内核 + 灵活外壳架构（C++）
 - **brain-skill-forge** (/workspace/brain-skill-forge): AgenticDSL 运行时（C++）
 
 **待考虑方案**：
@@ -76,8 +76,8 @@
 
 ## 🔗 相关文档
 
-- [AgentCore README](./AgentCore/README.md)
-- [brain-skill-forge docs](../../brain-skill-forge/docs/)
+- [AgentCore README](./README.md)
+- [brain-skill-forge docs](../brain-skill-forge/docs/)
 - [CppCortiX 智能体平台架构](./CppCortiX/)
 
 ---
