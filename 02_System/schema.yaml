@@ -1,0 +1,310 @@
+# PKGM 知识图谱 Schema
+
+**版本**: V1.0  
+**日期**: 2026-04-14  
+**状态**: ✅ Active
+
+---
+
+## 1. 实体类型（Node Types）
+
+### 1.1 核心类型（Phase 1）
+
+| ID | 类型 | 文件位置 | 核心属性 | 必填属性 |
+|----|------|---------|---------|---------|
+| N01 | **Concept** | `01_Wiki/concepts/` | name, domain, definition, aliases[], tags[] | name, definition |
+| N02 | **Architecture** | `01_Wiki/entities/` | name, project, version, status, diagram | name, project |
+| N03 | **Decision** | `01_Wiki/entities/` | id, context, decision, status, date | id, decision |
+| N04 | **Experiment** | `01_Wiki/entities/` | name, hypothesis, result, date, evidence[] | name, result |
+| N05 | **Paper** | `01_Wiki/entities/` | title, year, authors[], doi, venue, abstract | title, year |
+| N06 | **Method** | `01_Wiki/concepts/` | name, category, description, source_paper | name, description |
+| N07 | **Person** | `01_Wiki/entities/` | name, role, affiliation, notable_work[] | name |
+| N08 | **Organization** | `01_Wiki/entities/` | name, type, url, notable_projects[] | name |
+
+### 1.2 扩展类型（Phase 2+）
+
+| ID | 类型 | 说明 | 核心属性 |
+|----|------|------|---------|
+| N09 | **CodePattern** | 代码模式/最佳实践 | name, language, code_ref, complexity |
+| N10 | **Project** | 项目元数据 | name, repo, status, tech_stack[] |
+| N11 | **Tool** | 工具/框架 | name, category, url, alternatives[] |
+| N12 | **Question** | 待研究问题 | question, priority, status, related_concepts[] |
+
+---
+
+## 2. 通用属性（所有实体自动拥有）
+
+```yaml
+# 溯源属性
+source_type: original | primary | secondary | tertiary
+source_ref: "来源描述"
+source_url: "https://..."           # 可选
+source_doi: "10.xxxx/..."           # 可选，论文专用
+source_file: "00_Raw_Sources/..."   # 可选，本地文件路径
+confidence: 1 | 2 | 3 | 4 | 5       # 1-5 星置信度
+
+# 验证属性
+verification:
+  status: unverified | pending | verified | refuted
+  method: "验证方式"                  # 可选
+  verified_by: "验证人"              # 可选
+  verified_date: "2026-04-14"        # 可选
+
+# 生命周期属性
+lifecycle:
+  status: active | superseded | deprecated | refuted
+  superseded_by: "[[新页面名]]"       # 可选
+  deprecated_reason: "原因"          # 可选
+  deprecated_date: "2026-04-14"      # 可选
+
+# 创建/更新属性
+created: 2026-04-14
+created_by: "agent/ingest | Suhua | ..."
+updated: 2026-04-14
+updated_by: "agent/link | Suhua | ..."
+
+# 分类属性
+tags: [tag1, tag2]
+aliases: [别名 1, 别名 2]
+```
+
+---
+
+## 3. 关系类型（Edge Types）
+
+### 3.1 知识连接关系（8 种）
+
+| ID | 关系 | 方向 | 允许源类型 → 允许目标类型 | 属性 | 示例 |
+|----|------|------|------------------------|------|------|
+| R01 | **DEPENDS_ON** | Concept → Concept | Concept → Concept | strength: strong\|weak | CUDA Warp Divergence → SIMT Model |
+| R02 | **INSPIRED_BY** | Architecture → Paper\|Concept | Architecture → Paper, Concept | aspect: "具体受启发的方面" | AOS-Universal → Transformer |
+| R03 | **IMPLEMENTS** | CodePattern\|Architecture → Concept | CodePattern, Architecture → Concept | completeness: 0-100% | PTX-EMU → PTX 指令集仿真 |
+| R04 | **VERIFIED_BY** | Concept → Experiment | Concept → Experiment | result: confirmed\|refuted\|partial | 合并访问 → 性能测试报告 |
+| R05 | **OBSOLETES** | Concept → Concept | Concept → Concept | reason: "淘汰原因" | Hopper 缓存策略 → Ampere 策略 |
+| R06 | **REFINES** | Concept → Concept | Concept → Concept | detail_level: higher | Attention → Multi-Query Attention |
+| R07 | **CONTRADICTS** | Concept ↔ Concept | Concept ↔ Concept | context: "矛盾的具体方面" | 128-byte vs 64-byte 对齐 |
+| R08 | **BELONGS_TO** | Concept → Domain\|Topic | Concept → Domain, Topic | - | CUDA 概念 → GPU Architecture |
+
+### 3.2 学术引用关系（4 种）
+
+| ID | 关系 | 方向 | 允许源类型 → 允许目标类型 | 属性 | 示例 |
+|----|------|------|------------------------|------|------|
+| R09 | **CITES** | Paper → Paper | Paper → Paper | context: "引用上下文" | Attention Is All You Need → Sequence-to-Sequence |
+| R10 | **SURPASSES** | Paper → Paper | Paper → Paper | metric, value_delta, dataset | LLaMA-3 → Mistral-7B |
+| R11 | **REFUTES** | Paper → Paper | Paper → Paper | reason, evidence | 论文 A → 论文 B 的核心假设 |
+| R12 | **PROPOSES** | Paper → Method | Paper → Method | - | Attention Is All You Need → Transformer |
+
+### 3.3 人与组织关系（3 种）
+
+| ID | 关系 | 方向 | 允许源类型 → 允许目标类型 | 属性 | 示例 |
+|----|------|------|------------------------|------|------|
+| R13 | **CREATED_BY** | Architecture\|Concept → Person | Architecture, Concept → Person | - | AOS-Universal → Suhua |
+| R14 | **AFFILIATED_WITH** | Person → Organization | Person → Organization | - | Karpathy → OpenAI |
+| R15 | **USED_IN** | Concept\|Method → Project | Concept, Method → Project | - | Transformer → CortiX |
+
+---
+
+## 4. 关系属性格式
+
+### 4.1 简单关系（无额外属性）
+
+```yaml
+relations:
+  depends_on:
+    - "[[SIMT Execution Model]]"
+    - "[[CUDA Warp]]"
+  belongs_to:
+    - "[[01_GPU_Architecture]]"
+```
+
+### 4.2 复杂关系（有属性）
+
+```yaml
+relations:
+  surpasses:
+    - target: "[[Mistral-7B]]"
+      metric: "MMLU Score"
+      value_delta: "+5.2%"
+      dataset: "MMLU-57"
+  verified_by:
+    - target: "[[PTX-EMU: Warp Divergence 性能测试]]"
+      result: "confirmed"
+      date: "2026-04-14"
+  contradicts:
+    - target: "[[CUDA 合并访问策略 v1]]"
+      context: "Hopper 架构行为已改变"
+```
+
+---
+
+## 5. 页面格式规范
+
+### 5.1 Frontmatter 结构
+
+```yaml
+---
+title: "页面标题"
+type: concept | paper | person | organization | architecture | decision | experiment | method
+domain: "01_GPU_Architecture"  # 对应 04_Knowledge 一级目录
+
+# 溯源
+source_type: primary
+source_ref: "来源描述"
+source_url: "https://..."
+confidence: 4
+tags: [tag1, tag2]
+aliases: [别名 1, 别名 2]
+
+# 验证
+verification:
+  status: unverified
+
+# 生命周期
+lifecycle:
+  status: active
+
+# 创建/更新
+created: 2026-04-14
+created_by: "agent/ingest"
+updated: 2026-04-14
+updated_by: "agent/ingest"
+
+# 关系
+relations:
+  depends_on:
+    - "[[相关概念]]"
+  belongs_to:
+    - "[[01_GPU_Architecture]]"
+
+# 提取来源（01_Wiki 页面专用）
+extracted_from: "[[04_Knowledge/...]]"  # 可选
+---
+```
+
+### 5.2 正文结构
+
+```markdown
+# 页面标题
+
+## 定义 / 摘要
+
+...
+
+## 我的理解 🧠
+
+...（可选，原创思考）
+
+## 来源 📖
+
+> 来源：[[primary]] 来源描述
+
+## 关联
+
+- **依赖**: [[概念 1]], [[概念 2]]
+- **验证**: [[实验页面]]
+```
+
+---
+
+## 6. 命名规范
+
+### 6.1 文件命名
+
+- 基于 `title` 字段生成 slug（小写英文 + 连字符）
+- 中文标题转为拼音或英文翻译
+- 禁止特殊字符（空格、标点、中文）
+
+| title | 文件名 |
+|-------|--------|
+| `"CUDA Warp Divergence"` | `cuda-warp-divergence.md` |
+| `"Attention Is All You Need"` | `attention-is-all-you-need.md` |
+| `"PTX-EMU: Warp Divergence 性能测试"` | `ptx-emu-warp-divergence-performance-test.md` |
+
+### 6.2 目录命名
+
+- 一级目录：`01_GPU_Architecture`, `02_CPU_Architecture` ...（数字前缀 + 大写 + 下划线）
+- 二级/三级目录：`generations/`, `microarchitecture/`, `programming-models/` ...（小写 + 连字符）
+
+---
+
+## 7. 隐式边 vs 显式边
+
+### 7.1 定义
+
+| 类型 | 来源 | 解析方式 | 优先级 |
+|------|------|---------|--------|
+| **隐式边** | 正文 `[[wikilink]]` | Agent 扫描提取 | 低 |
+| **显式边** | frontmatter `relations` | Agent 解析 YAML | 高 |
+
+### 7.2 优先级规则
+
+```
+如果 relations.depends_on 包含 [[B]]
+  → 生成 A --(DEPENDS_ON)--> B
+  → 不再生成 A --(linked_to)--> B
+
+如果正文仅有 [[B]] 但 relations 未声明
+  → 生成 A --(linked_to)--> B（无类型边）
+```
+
+### 7.3 双向链接
+
+```
+页面 A 的 relations.depends_on 包含 [[页面 B]]
+  → 页面 B 无需修改
+  → Agent 动态计算 backlinks: [[页面 A]] (DEPENDS_ON reverse)
+  → Obsidian Backlinks 面板自动显示
+```
+
+---
+
+## 8. 扩展机制
+
+### 8.1 新增实体类型
+
+```yaml
+# 在本文件中添加
+entity_types:
+  MyNewType:
+    description: "类型描述"
+    attributes:
+      - name: "attr1"
+        type: string
+        required: true
+      - name: "attr2"
+        type: number
+        required: false
+```
+
+### 8.2 新增关系类型
+
+```yaml
+# 在本文件中添加
+relation_types:
+  MY_NEW_RELATION:
+    description: "关系描述"
+    from: ["Concept", "Architecture"]    # 允许的源类型
+    to: ["Concept", "Method"]             # 允许的目标类型
+    directed: true                        # 是否有方向
+    properties:                           # 关系属性（可选）
+      - name: "weight"
+        type: number
+```
+
+### 8.3 版本管理
+
+- Schema 文件带版本号（本文件：V1.0）
+- 新增类型不影响已有页面
+- 废弃类型标记为 `deprecated`，不物理删除
+
+---
+
+## 9. 修订历史
+
+| 日期 | 版本 | 变更 |
+|------|------|------|
+| 2026-04-14 | V1.0 | 初始版本，基于 ADR-001 |
+
+---
+
+`// -- PKGM Schema V1.0 --`
